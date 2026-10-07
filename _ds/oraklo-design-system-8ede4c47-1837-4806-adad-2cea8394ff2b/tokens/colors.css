@@ -1,0 +1,36 @@
+:root{
+/* Paleta base — amostrada de Logo azul.png, Frame 440, Efeito degradê.svg e posts sociais */
+--ok-blue:#2155E9;          /* Azul Oraklo — a única cor da marca */
+--ok-blue-600:#1A44C2;      /* pressionado / brilho profundo */
+--ok-blue-400:#4E77EE;
+--ok-blue-300:#7394F1;      /* brilho médio em fundos claros */
+--ok-blue-200:#BDCCF8;      /* brilho externo em fundos claros */
+--ok-blue-100:#E7EEFD;      /* núcleo do brilho ("luz") do Efeito degradê */
+--ok-navy:#0A1946;          /* preenchimento da cápsula de serviço sobre preto */
+--ok-navy-line:#1E3CA0;     /* fio em volta da cápsula navy */
+--ok-ink:#040A1B;           /* azul-preto do fim dos degradês */
+--ok-black:#000000;
+--ok-white:#FFFFFF;
+--ok-gray-100:#F2F2F2;      /* preenchimento de campo de formulário */
+--ok-gray-300:#D9D9D9;
+--ok-gray-500:#8C8C8C;      /* texto de placeholder */
+--ok-gray-700:#4A4A4A;
+
+/* Aliases semânticos */
+--surface-page:var(--ok-white);
+--surface-dark:var(--ok-black);
+--surface-brand:var(--ok-blue);
+--surface-card-dark:var(--ok-navy);
+--surface-field:var(--ok-gray-100);
+--text-strong:var(--ok-black);
+--text-body:var(--ok-black);
+--text-muted:var(--ok-gray-700);
+--text-placeholder:var(--ok-gray-500);
+--text-on-dark:var(--ok-white);
+--text-accent:var(--ok-blue);
+--border-hairline-light:rgba(0,0,0,.9);
+--border-hairline-dark:rgba(255,255,255,.85);
+--border-accent:var(--ok-blue);
+--link:var(--ok-blue);
+--link-hover:var(--ok-blue-600);
+}

@@ -1,0 +1,337 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Oraklo Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: workbench — radar as the stage on the left, analysis controls stacked in a side rail */
+:root{
+  --bg:#eef0f4; --surface:#ffffff; --sunk:#e3e6ed; --line:#cfd4de;
+  --fg:#161a24; --muted:#5d6577; --accent:#3b2fb8; --accent-soft:#e4e1fb;
+  --ok:#1d7a52; --warn:#a8650a; --bad:#b4233a;
+  --grid:#c5cad6; --axis:#9aa1b2;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Instrument Sans", "Helvetica Neue", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12141b; --surface:#1b1e28; --sunk:#232735; --line:#323748;
+  --fg:#eceef4; --muted:#9aa1b4; --accent:#a99dff; --accent-soft:#2c2850;
+  --ok:#4cc391; --warn:#e3a24a; --bad:#f0677d; --grid:#2f3445; --axis:#4a5168; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12141b; --surface:#1b1e28; --sunk:#232735; --line:#323748;
+  --fg:#eceef4; --muted:#9aa1b4; --accent:#a99dff; --accent-soft:#2c2850;
+  --ok:#4cc391; --warn:#e3a24a; --bad:#f0677d; --grid:#2f3445; --axis:#4a5168; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body);padding-inline:16px;padding-block:20px 40px}
+.wrap{max-width:1280px;margin:0 auto;display:grid;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font:700 clamp(26px,3.4vw,36px)/1 var(--f-display);letter-spacing:-.02em;margin:0}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.main{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:1fr}}
+
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:14px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (max-width:900px){.stage{position:static}}
+.stage svg{width:100%;height:auto;display:block;max-width:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px 6px 8px;font-size:14px;font-weight:500;transition:opacity .15s}
+.chip .sw{width:14px;height:14px;border-radius:50%;border:2px solid var(--c);background:var(--c)}
+.chip.off{opacity:.45}
+.chip.off .sw{background:transparent}
+.chip.off .nm{text-decoration:line-through}
+.hint{font-size:12px;color:var(--muted);margin:0}
+
+.rail{display:grid;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;min-width:0}
+.panel h2{font:700 13px/1 var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px}
+input[type=text],input[type=number]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;width:100%;min-width:0}
+input:focus{border-color:var(--accent);outline:none}
+.attrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.attr{display:flex;align-items:center;gap:8px}
+.attr b{font:600 12px var(--f-mono);color:var(--muted);width:18px;flex:none}
+
+.base-row{display:flex;align-items:center;gap:10px;font-size:14px}
+.base-row input{width:72px;font-family:var(--f-mono)}
+.tags{display:grid;gap:6px}
+.tagrow{display:grid;grid-template-columns:minmax(0,1fr) 80px 32px;gap:6px;align-items:center}
+.tagrow input[type=number]{font-family:var(--f-mono);text-align:right}
+.x{background:none;border:1px solid transparent;border-radius:8px;height:34px;color:var(--muted);font-size:18px;line-height:1}
+.x:hover{color:var(--bad);border-color:var(--line)}
+
+.brands{display:grid;gap:10px}
+.brand{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.brand.sel{border-color:var(--c)}
+.bhead{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.bhead .sw{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.bhead .nm{font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font:600 11px/1 var(--f-mono);padding:5px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.ok{color:var(--ok)} .pill.warn{color:var(--warn)} .pill.bad{color:var(--bad)}
+.bbody{padding:4px 12px 14px;display:grid;gap:12px;border-top:1px solid var(--line);background:var(--surface)}
+.bname{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding-top:10px}
+.colors{display:flex;gap:4px}
+.colors button{width:20px;height:20px;border-radius:50%;background:var(--c);border:2px solid transparent;padding:0}
+.colors button[aria-pressed=true]{border-color:var(--fg)}
+.lbl{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}
+.tagpick{display:flex;flex-wrap:wrap;gap:6px}
+.tp{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:13px}
+.tp em{font:600 11px var(--f-mono);font-style:normal;color:var(--muted);margin-left:4px}
+.tp[aria-pressed=true]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.tp[aria-pressed=true] em{color:var(--accent)}
+
+.meter{display:grid;gap:6px}
+.meter-top{display:flex;justify-content:space-between;font-size:13px;color:var(--muted)}
+.meter-top strong{font-family:var(--f-mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);transition:width .2s}
+.meter.bad .bar i{background:var(--bad)}
+.meter.flash{animation:fl .4s}
+@keyframes fl{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+.scores{display:grid;gap:6px}
+.score{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px}
+.score span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dots{display:flex;gap:4px}
+.dots button{width:30px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--bg);font:600 12px var(--f-mono);color:var(--muted)}
+.dots button.on{background:var(--c);border-color:var(--c);color:#fff}
+.dots button.lim{opacity:.35}
+.brow{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.danger{color:var(--bad)}
+.add{border:1px dashed var(--line);background:transparent;border-radius:10px;padding:9px;font-size:14px;color:var(--muted);width:100%}
+.add:hover{color:var(--accent);border-color:var(--accent)}
+
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--fg);width:min(640px,calc(100vw - 32px));padding:18px}
+dialog::backdrop{background:rgba(10,12,20,.5)}
+dialog textarea{width:100%;min-height:240px;font:12px/1.4 var(--f-mono);background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:10px}
+dialog h3{font:700 18px var(--f-display);margin:0 0 6px}
+dialog p{margin:0 0 10px;color:var(--muted);font-size:13px}
+.drow{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
+.msg{font-size:13px;color:var(--ok);margin-right:auto;align-self:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Oraklo <span>Radar</span></h1>
+      <p class="sub">Mapa de posicionamento estratégico. Cada marca distribui seus pontos entre 6 atributos; tags de poder ampliam ou reduzem esse orçamento.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn" id="btnExport">Exportar / importar</button>
+      <button class="btn" id="btnReset">Carregar exemplo</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="stage" aria-label="Gráfico de radar">
+      <svg id="radar" viewBox="0 0 600 560" role="img" aria-label="Radar de posicionamento"></svg>
+      <div class="legend" id="legend"></div>
+      <p class="hint">Clique no nome de uma marca para mostrar ou ocultar sua forma no radar.</p>
+    </section>
+
+    <div class="rail">
+      <section class="panel">
+        <h2>Atributos avaliados</h2>
+        <div class="attrs" id="attrs"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Pontos e poderes</h2>
+        <label class="base-row" for="base">Pontos-base por marca <input type="number" id="base" min="6" max="30"></label>
+        <div class="tags" id="tags"></div>
+        <button class="add" id="addTag">+ Nova tag de poder</button>
+      </section>
+
+      <section class="panel">
+        <h2>Marcas <span class="pill" id="count"></span></h2>
+        <div class="brands" id="brands"></div>
+        <button class="add" id="addBrand">+ Adicionar marca</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <h3>Exportar / importar mapa</h3>
+  <p>Copie o JSON para guardar este mapa ou cole um JSON salvo e clique em Importar.</p>
+  <textarea id="json" spellcheck="false"></textarea>
+  <div class="drow">
+    <span class="msg" id="dmsg"></span>
+    <button class="btn" id="dClose">Fechar</button>
+    <button class="btn" id="dCopy">Copiar</button>
+    <button class="btn primary" id="dImport">Importar</button>
+  </div>
+</dialog>
+
+<script>
+const COLORS=["#3b5bdb","#e8590c","#2b9a66","#c2255c","#7048e8","#0c8599","#d6a10b","#5c677d"];
+const KEY="oraklo-radar-v1";
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function example(){
+  const t={g:uid(),p:uid(),tr:uid(),n:uid()};
+  return {
+    base:18,
+    attrs:["Sofisticação","Acessibilidade","Inovação","Tradição","Sustentabilidade","Proximidade"],
+    tags:[{id:t.g,name:"Marca de grande porte",mod:7},{id:t.p,name:"Pioneira",mod:4},{id:t.tr,name:"Tradição regional",mod:2},{id:t.n,name:"Nicho / recém-chegada",mod:-2}],
+    brands:[
+      {id:uid(),name:"Exemplo · Café Aurora",color:COLORS[0],visible:true,tags:[t.g],scores:[5,3,3,5,4,4]},
+      {id:uid(),name:"Exemplo · Torra Norte",color:COLORS[1],visible:true,tags:[t.p],scores:[3,4,5,2,5,3]},
+      {id:uid(),name:"Exemplo · Grão Livre",color:COLORS[2],visible:true,tags:[t.n],scores:[2,5,2,1,2,4]}
+    ],
+    open:null
+  };
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!Array.isArray(S.brands)) S=example();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+const budget=b=>S.base+b.tags.reduce((a,id)=>{const t=S.tags.find(x=>x.id===id);return a+(t?Number(t.mod)||0:0)},0);
+const used=b=>b.scores.reduce((a,v)=>a+v,0);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- radar ---------- */
+const CX=300,CY=285,R=200;
+function pt(i,v){const a=-Math.PI/2+i*Math.PI/3;return [CX+Math.cos(a)*R*v/5,CY+Math.sin(a)*R*v/5]}
+function drawRadar(){
+  let s="";
+  for(let r=1;r<=5;r++){
+    const p=[0,1,2,3,4,5].map(i=>pt(i,r).join(",")).join(" ");
+    s+=`<polygon points="${p}" fill="${r%2?'var(--sunk)':'var(--surface)'}" fill-opacity="${r===5?.5:.35}" stroke="var(--grid)" stroke-width="1"/>`;
+  }
+  for(let i=0;i<6;i++){const [x,y]=pt(i,5);s+=`<line x1="${CX}" y1="${CY}" x2="${x}" y2="${y}" stroke="var(--axis)" stroke-width="1"/>`}
+  for(let r=1;r<=5;r++){const [x,y]=pt(0,r);s+=`<text x="${x+6}" y="${y+4}" font-family="var(--f-mono)" font-size="11" fill="var(--muted)">${r}</text>`}
+  S.brands.filter(b=>b.visible).forEach(b=>{
+    const p=b.scores.map((v,i)=>pt(i,v).join(",")).join(" ");
+    const sel=S.open===b.id;
+    s+=`<polygon points="${p}" fill="${b.color}" fill-opacity="${sel?.28:.14}" stroke="${b.color}" stroke-width="${sel?3:2}" stroke-linejoin="round"/>`;
+    b.scores.forEach((v,i)=>{const [x,y]=pt(i,v);s+=`<circle cx="${x}" cy="${y}" r="${sel?5:4}" fill="${b.color}" stroke="var(--surface)" stroke-width="1.5"/>`});
+  });
+  S.attrs.forEach((a,i)=>{
+    const [x,y]=pt(i,5.55);
+    const anchor=Math.abs(x-CX)<4?"middle":x>CX?"start":"end";
+    const dy=y<CY-50?-4:y>CY+50?14:4;
+    s+=`<text x="${x}" y="${y+dy}" text-anchor="${anchor}" font-family="var(--f-display)" font-weight="700" font-size="16" fill="var(--fg)">${esc(a||"Atributo "+(i+1))}</text>`;
+  });
+  document.getElementById("radar").innerHTML=s;
+}
+
+/* ---------- legend ---------- */
+function drawLegend(){
+  const L=document.getElementById("legend");
+  L.innerHTML=S.brands.map(b=>`<button class="chip ${b.visible?'':'off'}" style="--c:${b.color}" data-tog="${b.id}" aria-pressed="${b.visible}"><span class="sw"></span><span class="nm">${esc(b.name||"Sem nome")}</span></button>`).join("")||`<p class="hint">Nenhuma marca ainda. Adicione a primeira no painel ao lado.</p>`;
+}
+
+/* ---------- side panels ---------- */
+function drawAttrs(){
+  document.getElementById("attrs").innerHTML=S.attrs.map((a,i)=>`<label class="attr" for="attr${i}"><b>${i+1}</b><input type="text" id="attr${i}" data-attr="${i}" value="${esc(a)}" placeholder="Atributo ${i+1}"></label>`).join("");
+}
+function drawTags(){
+  document.getElementById("base").value=S.base;
+  document.getElementById("tags").innerHTML=S.tags.map(t=>`<div class="tagrow"><input type="text" id="tn_${t.id}" data-tagname="${t.id}" value="${esc(t.name)}" aria-label="Nome da tag"><input type="number" id="tm_${t.id}" data-tagmod="${t.id}" value="${t.mod}" aria-label="Modificador de pontos"><button class="x" data-deltag="${t.id}" aria-label="Remover tag">×</button></div>`).join("");
+}
+function status(b){
+  const u=used(b),bud=budget(b),cap=Math.min(bud,30);
+  if(u>bud) return ["bad",`${u}/${bud} · excedido`];
+  if(u===cap) return ["ok",`${u}/${bud}`];
+  return ["warn",`${u}/${bud} · sobram ${cap-u}`];
+}
+function drawBrands(){
+  document.getElementById("count").textContent=S.brands.length;
+  document.getElementById("brands").innerHTML=S.brands.map(b=>{
+    const [cls,txt]=status(b),open=S.open===b.id,u=used(b),bud=budget(b);
+    let body="";
+    if(open){
+      const left=bud-u;
+      body=`<div class="bbody">
+        <div class="bname"><input type="text" id="bn_${b.id}" data-bname="${b.id}" value="${esc(b.name)}" placeholder="Nome da marca" aria-label="Nome da marca">
+          <div class="colors">${COLORS.map(c=>`<button style="--c:${c}" data-color="${c}" data-bid="${b.id}" aria-pressed="${c===b.color}" aria-label="Cor"></button>`).join("")}</div></div>
+        <div><p class="lbl">Tags de poder</p><div class="tagpick">${S.tags.map(t=>`<button class="tp" data-tagtog="${t.id}" data-bid="${b.id}" aria-pressed="${b.tags.includes(t.id)}">${esc(t.name)}<em>${t.mod>=0?"+":""}${t.mod}</em></button>`).join("")||'<span class="hint">Crie tags no painel “Pontos e poderes”.</span>'}</div></div>
+        <div class="meter ${u>bud?'bad':''}" id="meter_${b.id}"><div class="meter-top"><span>Pontos usados</span><strong>${u} / ${bud}</strong></div><div class="bar"><i style="width:${Math.min(100,u/Math.max(bud,1)*100)}%"></i></div></div>
+        <div class="scores">${S.attrs.map((a,i)=>`<div class="score"><span>${esc(a||"Atributo "+(i+1))}</span><div class="dots">${[1,2,3,4,5].map(v=>`<button class="${v<=b.scores[i]?'on':''} ${v-b.scores[i]>left&&v>b.scores[i]?'lim':''}" data-score="${v}" data-i="${i}" data-bid="${b.id}" aria-label="${esc(a)} nota ${v}">${v}</button>`).join("")}</div></div>`).join("")}</div>
+        <div class="brow"><button class="btn" data-dup="${b.id}">Duplicar</button><button class="btn danger" data-delb="${b.id}">Excluir marca</button></div>
+      </div>`;
+    }
+    return `<div class="brand ${open?'sel':''}" style="--c:${b.color}"><div class="bhead" data-open="${b.id}" role="button" tabindex="0" aria-expanded="${open}"><span class="sw"></span><span class="nm">${esc(b.name||"Sem nome")}</span><span class="pill ${cls}">${txt}</span></div>${body}</div>`;
+  }).join("");
+}
+function renderAll(){drawRadar();drawLegend();drawAttrs();drawTags();drawBrands();save()}
+function refresh(){drawRadar();drawLegend();drawBrands();save()}
+
+/* ---------- events ---------- */
+const byId=id=>S.brands.find(b=>b.id===id);
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button,[data-open]");if(!t)return;
+  const d=t.dataset;
+  if(d.tog){const b=byId(d.tog);b.visible=!b.visible;refresh()}
+  else if(d.open){S.open=S.open===d.open?null:d.open;refresh()}
+  else if(d.score){
+    const b=byId(d.bid),i=+d.i,v=+d.score,nu=used(b)-b.scores[i]+v;
+    if(v>b.scores[i]&&nu>budget(b)){const m=document.getElementById("meter_"+b.id);m.classList.remove("flash");void m.offsetWidth;m.classList.add("flash");return}
+    b.scores[i]=v;refresh();
+  }
+  else if(d.tagtog){const b=byId(d.bid);b.tags=b.tags.includes(d.tagtog)?b.tags.filter(x=>x!==d.tagtog):[...b.tags,d.tagtog];refresh()}
+  else if(d.color){byId(d.bid).color=d.color;refresh()}
+  else if(d.dup){const b=byId(d.dup);const n={...JSON.parse(JSON.stringify(b)),id:uid(),name:b.name+" (cópia)"};S.brands.splice(S.brands.indexOf(b)+1,0,n);S.open=n.id;refresh()}
+  else if(d.delb){S.brands=S.brands.filter(b=>b.id!==d.delb);S.open=null;refresh()}
+  else if(d.deltag){S.tags=S.tags.filter(x=>x.id!==d.deltag);S.brands.forEach(b=>b.tags=b.tags.filter(x=>x!==d.deltag));renderAll()}
+});
+document.addEventListener("keydown",e=>{const h=e.target.closest("[data-open]");if(h&&(e.key==="Enter"||e.key===" ")){e.preventDefault();h.click()}});
+document.addEventListener("input",e=>{
+  const d=e.target.dataset;
+  if(d.attr!==undefined){S.attrs[+d.attr]=e.target.value;drawRadar();save();
+    document.querySelectorAll(`.score:nth-child(${+d.attr+1}) > span`).forEach(s=>s.textContent=e.target.value||"Atributo "+(+d.attr+1))}
+  else if(d.bname){byId(d.bname).name=e.target.value;drawLegend();
+    const h=document.querySelector(`[data-open="${d.bname}"] .nm`);if(h)h.textContent=e.target.value||"Sem nome";save()}
+  else if(d.tagname){S.tags.find(x=>x.id===d.tagname).name=e.target.value;save()}
+  else if(e.target.id==="base"){const v=parseInt(e.target.value,10);if(!isNaN(v)){S.base=v;refresh()}}
+});
+document.addEventListener("change",e=>{
+  const d=e.target.dataset;
+  if(d.tagmod){S.tags.find(x=>x.id===d.tagmod).mod=parseInt(e.target.value,10)||0;refresh()}
+  if(d.tagname)drawBrands();
+});
+document.getElementById("addTag").onclick=()=>{S.tags.push({id:uid(),name:"Nova tag",mod:2});renderAll();const ins=document.querySelectorAll("[data-tagname]");ins[ins.length-1].select()};
+document.getElementById("addBrand").onclick=()=>{
+  const used=S.brands.map(b=>b.color);const c=COLORS.find(x=>!used.includes(x))||COLORS[S.brands.length%COLORS.length];
+  const b={id:uid(),name:"Nova marca",color:c,visible:true,tags:[],scores:[1,1,1,1,1,1]};
+  S.brands.push(b);S.open=b.id;refresh();const i=document.getElementById("bn_"+b.id);if(i){i.focus();i.select()}
+};
+
+/* reset with in-page confirmation */
+const rb=document.getElementById("btnReset");let armed=null;
+rb.onclick=()=>{
+  if(!armed){rb.textContent="Confirmar? Substitui o mapa atual";rb.classList.add("danger");armed=setTimeout(()=>{rb.textContent="Carregar exemplo";rb.classList.remove("danger");armed=null},3500);return}
+  clearTimeout(armed);armed=null;rb.textContent="Carregar exemplo";rb.classList.remove("danger");S=example();renderAll();
+};
+
+/* export / import */
+const dlg=document.getElementById("dlg"),ta=document.getElementById("json"),dm=document.getElementById("dmsg");
+document.getElementById("btnExport").onclick=()=>{const c={...S};delete c.open;ta.value=JSON.stringify(c,null,2);dm.textContent="";dm.style.color="";dlg.showModal()};
+document.getElementById("dClose").onclick=()=>dlg.close();
+document.getElementById("dCopy").onclick=()=>{
+  navigator.clipboard.writeText(ta.value).then(()=>dm.textContent="Copiado.").catch(()=>{ta.select();dm.textContent="Selecionado. Use Ctrl/Cmd+C."});
+};
+document.getElementById("dImport").onclick=()=>{
+  try{const n=JSON.parse(ta.value);
+    if(!Array.isArray(n.attrs)||n.attrs.length!==6||!Array.isArray(n.brands)||!Array.isArray(n.tags))throw 0;
+    n.base=Number(n.base)||18;n.open=null;n.brands.forEach(b=>{b.id=b.id||uid();b.tags=b.tags||[];b.scores=(b.scores||[]).slice(0,6).map(v=>Math.max(1,Math.min(5,v|0)));while(b.scores.length<6)b.scores.push(1);if(b.visible===undefined)b.visible=true});
+    S=n;renderAll();dlg.close();
+  }catch(err){dm.style.color="var(--bad)";dm.textContent="JSON inválido: precisa de 6 atributos, tags e marcas."}
+};
+
+renderAll();
+</script>
+
+</body></html>

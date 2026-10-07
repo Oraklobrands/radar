@@ -1,0 +1,24 @@
+:root{
+--font-sans:"Figtree","Google Sans","Helvetica Neue",Arial,sans-serif;
+--font-display:var(--font-sans);
+--weight-light:300;--weight-regular:400;--weight-medium:500;--weight-bold:700;
+
+/* Escala web (largura de design 1440) */
+--fs-display:72px;   /* h1 do hero */
+--fs-h1:56px;        /* "É assim que vamos te ajudar!" */
+--fs-h2:44px;        /* títulos de seção */
+--fs-h3:32px;        /* nomes de serviço, títulos de card */
+--fs-lead:24px;      /* frases de destaque */
+--fs-body:18px;
+--fs-small:15px;
+--fs-caption:12px;   /* caixa-alta do rodapé editorial */
+--lh-tight:1.08; /* @kind font */
+--lh-snug:1.2; /* @kind font */
+--lh-body:1.4; /* @kind font */
+
+--tracking-display:-0.02em;--tracking-body:0;--tracking-caps:0.02em;
+
+/* Escala social / apresentação (canvas 1080 ou 1920) */
+--fs-poster:120px;
+--fs-poster-sub:72px;
+}

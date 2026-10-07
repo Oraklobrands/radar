@@ -1,0 +1,12 @@
+:root{
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:24px;--space-6:32px;--space-7:48px;--space-8:64px;--space-9:96px;--space-10:144px;
+--page-max:1200px;          /* coluna de conteúdo do site */
+--page-gutter:120px;
+--social-margin:66px;       /* margem editorial nos posts 1080 */
+
+--radius-xs:4px;            /* campos de formulário */
+--radius-md:16px;
+--radius-lg:24px;           /* cards de projeto / blog / foto */
+--radius-xl:32px;           /* cápsulas de serviço navy */
+--radius-pill:999px;
+}

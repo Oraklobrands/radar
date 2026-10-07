@@ -1,0 +1,4 @@
+.ok-grain{position:relative;isolation:isolate}
+.ok-grain::after{content:"";position:absolute;inset:0;background-image:var(--grain);opacity:var(--grain-opacity);mix-blend-mode:overlay;pointer-events:none;z-index:1}
+a{color:var(--link);text-underline-offset:.12em}
+a:hover{color:var(--link-hover)}
