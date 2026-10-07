@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <base href="/radar/">
 <title>Oraklo Radar</title>
-  <!-- Favicon padrão e atalho para navegadores desktop -->
-<link rel="icon" type="image/png" href="assets/logo/logo-azul.png?v=2">
-<link rel="shortcut icon" type="image/png" href="assets/logo/logo-azul.png?v=2">
 
-<!-- Suporte explícito para iPad, iPhone e Safari no macOS -->
-<link rel="apple-touch-icon" href="assets/logo/logo-azul.png?v=2">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/logo/logo-azul.png?v=2">
+<!-- Favicon e Ícones com suporte universal (Windows, iPadOS/iOS e Android) -->
+<link rel="icon" type="image/png" href="/radar/assets/logo/logo-azul.png?v=3">
+<link rel="shortcut icon" type="image/png" href="/radar/assets/logo/logo-azul.png?v=3">
+<link rel="apple-touch-icon" href="/radar/assets/logo/logo-azul.png?v=3">
+<link rel="apple-touch-icon" sizes="180x180" href="/radar/assets/logo/logo-azul.png?v=3">
+
 <script>
 (function(){
   var t;
@@ -274,7 +274,7 @@ body.lab .bpanel{grid-row:1;grid-column:1;z-index:3;align-self:center;justify-se
 <div class="bg-fx" aria-hidden="true"><i></i><i></i></div>
 <div class="wrap">
 <header class="top"><a id="logo" href="#" aria-label="Oraklo"></a><div class="top-actions"><button class="btn" id="btnExport">Exportar</button><button class="theme" id="themeTgl" role="switch" aria-checked="false" aria-label="Modo escuro"><span id="themeLbl">Claro</span><span class="track"><span class="knob"><svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg><svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"></path></svg></span></span></button></div></header>
-<section class="start" id="start" hidden><div><h1>Radar <span>de posicionamento</span></h1></div>
+<section class="start" id="start"><div><h1>Radar <span>de posicionamento</span></h1></div>
 <form id="startForm" novalidate><label for="fClient">Marca que encomendou o estudo<input type="text" id="fClient" placeholder="Nome da marca" autocomplete="off"></label><label for="fNiche">Nicho avaliado<input type="text" id="fNiche" placeholder="Ex.: materiais de construção" autocomplete="off"></label><label for="fOwner">Responsável pela análise<input type="text" id="fOwner" placeholder="Nome do responsável" autocomplete="off"></label><button class="btn primary" type="submit">Começar<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button></form></section>
 <div id="app" hidden>
 <section class="intro"><h1>Radar <span>de posicionamento</span></h1><div class="ctx"><label class="cf"><span>Marca contratante</span><input type="text" id="cClient" data-ctx="client" placeholder="Nome da marca" autocomplete="off"></label><label class="cf"><span>Nicho avaliado</span><input type="text" id="cNiche" data-ctx="niche" placeholder="Nicho" autocomplete="off"></label><label class="cf"><span>Responsável</span><input type="text" id="cOwner" data-ctx="owner" placeholder="Responsável" autocomplete="off"></label></div></section>
@@ -310,25 +310,30 @@ if(tgl){tgl.addEventListener("click",()=>{const t=document.documentElement.datas
 </script>
 <script>
 const COLORS=["#2155E9","#E0703A","#1F9E8A","#B8478F","#7A5CE0","#C9A227","#3E93D6","#7C8597"];
-const KEY="oraklo-radar-v2";
 const uid=()=>Math.random().toString(36).slice(2,9);
 
-function example(){
+function freshState(){
   const t={g:uid(),p:uid(),tr:uid(),n:uid()};
   return {
+    client:"",
+    niche:"",
+    owner:"",
     base:18,
     attrs:["Sofisticação","Acessibilidade","Inovação","Tradição","Sustentabilidade","Proximidade"],
     tags:[{id:t.g,name:"Marca de grande porte",mod:7},{id:t.p,name:"Pioneira",mod:4},{id:t.tr,name:"Tradição regional",mod:2},{id:t.n,name:"Nicho / recém-chegada",mod:-2}],
     brands:[
       {id:uid(),name:"Marca exemplo",color:COLORS[0],visible:true,tags:[],scores:[1,1,1,1,1,1]}
     ],
-    open:null
+    open:null,
+    started:false
   };
 }
-let S;
-try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!Array.isArray(S.brands)) S=example();
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+// Inicia sempre zerado a cada novo carregamento da página
+let S = freshState();
+
+// Salva apenas durante o uso em memória/sessão atual
+const save=()=>{try{sessionStorage.setItem("oraklo-radar-active",JSON.stringify(S))}catch(e){}};
 
 const budget=b=>S.base+b.tags.reduce((a,id)=>{const t=S.tags.find(x=>x.id===id);return a+(t?Number(t.mod)||0:0)},0);
 const used=b=>b.scores.reduce((a,v)=>a+v,0);
@@ -417,14 +422,31 @@ svgR.addEventListener("click",e=>{const t=e.target.closest(".alab");if(!t)return
   const done=()=>{inp.remove()};
   inp.addEventListener("blur",done);inp.addEventListener("keydown",k=>{if(k.key==="Enter"||k.key==="Escape"){k.preventDefault();inp.blur()}});
 });
+
 /* close brand panel on outside click */
 document.addEventListener("pointerdown",e=>{if(!S.open||appEl.hidden)return;if(e.target.closest(".bpanel,.chip,.pt,.alab,.alab-edit,.rail,.report,.top"))return;S.open=null;refresh()});
 
 /* ---------- start screen ---------- */
 const startEl=document.getElementById("start"),appEl=document.getElementById("app"),expBtn=document.getElementById("btnExport");
-function showStart(){if(typeof setLab==="function"&&lab)setLab(false);startEl.hidden=false;appEl.hidden=true;expBtn.hidden=true;document.getElementById("fClient").value=S.client||"";document.getElementById("fNiche").value=S.niche||"";document.getElementById("fOwner").value=S.owner||"";document.getElementById("fClient").focus()}
-function showApp(){startEl.hidden=true;appEl.hidden=false;expBtn.hidden=false;renderAll();if(typeof syncCy==="function")requestAnimationFrame(syncCy)}
-document.getElementById("startForm").addEventListener("submit",e=>{e.preventDefault();
+function showStart(){
+  if(typeof setLab==="function"&&lab)setLab(false);
+  startEl.hidden=false;
+  appEl.hidden=true;
+  expBtn.hidden=true;
+  document.getElementById("fClient").value="";
+  document.getElementById("fNiche").value="";
+  document.getElementById("fOwner").value="";
+  document.getElementById("fClient").focus();
+}
+function showApp(){
+  startEl.hidden=true;
+  appEl.hidden=false;
+  expBtn.hidden=false;
+  renderAll();
+  if(typeof syncCy==="function")requestAnimationFrame(syncCy);
+}
+document.getElementById("startForm").addEventListener("submit",e=>{
+  e.preventDefault();
   const c=document.getElementById("fClient"),n=document.getElementById("fNiche"),o=document.getElementById("fOwner");
   [c,n,o].forEach(x=>x.classList.toggle("err",!x.value.trim()));
   const bad=[c,n,o].find(x=>!x.value.trim());if(bad){bad.focus();return}
@@ -545,7 +567,8 @@ expBtn.onclick=()=>{
   rep.hidden=false;rep.scrollTop=0;document.body.classList.add("lock");
 };
 
-if(S.started&&S.client)showApp();else showStart();
+// Sempre abre na tela inicial ao entrar
+showStart();
 </script>
 </body>
 </html>
